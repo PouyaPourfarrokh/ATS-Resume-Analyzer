@@ -1,6 +1,34 @@
+# Web Framework
 flask
+flask-wtf
+flask-bootstrap
+
+# Hugging Face Transformers for LLaMA
 transformers
+
+# PyTorch for LLaMA and machine learning computations
+torch
+
+torchvision
+torchaudio
+
+# Accelerate for efficient model usage
+accelerate
+
+# Sentence Transformers for embedding generation
+sentence-transformers
+
+# Resume Text Extraction
 PyPDF2
 python-docx
-sentence-transformers
+
+# Clustering and Scoring Logic
 scikit-learn
+
+# Visualization (Optional for advanced analytics)
+matplotlib
+
+# Numerical Processing (Optional for advanced calculations)
+numpy
+
+sentencepiece
