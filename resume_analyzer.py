@@ -3,6 +3,7 @@ import subprocess
 import sys
 from pathlib import Path
 from PyPDF2 import PdfReader
+from visualizer import generate_visualizations  # Correct function name
 
 
 def extract_text_from_pdf(file_path):
@@ -40,7 +41,7 @@ def analyze_resume_with_llama(resume_text, runs=3):
     {resume_text}
     """
     scores = []
-    all_outputs = []
+    strengths, weaknesses = [], []
     try:
         for _ in range(runs):
             # Run the Ollama CLI with LLaMA 3.2
@@ -52,19 +53,30 @@ def analyze_resume_with_llama(resume_text, runs=3):
                 check=True
             )
             output = process.stdout.strip()
-            all_outputs.append(output)
 
-            # Parse ATS Score from the output
+            # Parse ATS Score
             score_line = next((line for line in output.splitlines() if line.startswith("ATS Score:")), None)
             if score_line:
                 score = float(score_line.split(":")[1].strip().replace("%", ""))
                 scores.append(score)
-            else:
-                print(f"Unable to parse ATS score from output:\n{output}")
+
+            # Parse Strengths
+            strength_lines = [
+                line.strip("- ") for line in output.splitlines() if line.startswith("-") and "Strength" in output
+            ]
+            if strength_lines:
+                strengths.extend(strength_lines)
+
+            # Parse Weaknesses
+            weakness_lines = [
+                line.strip("- ") for line in output.splitlines() if line.startswith("-") and "Weakness" in output
+            ]
+            if weakness_lines:
+                weaknesses.extend(weakness_lines)
 
         # Compute the average score
         avg_score = sum(scores) / len(scores) if scores else 0
-        return avg_score, all_outputs
+        return avg_score, strengths, weaknesses
     except subprocess.CalledProcessError as e:
         print(f"Error running Ollama CLI: {e.stderr}")
         sys.exit(1)
@@ -154,19 +166,17 @@ def main():
 
     # Analyze the resume with LLaMA 3.2 (3 runs for averaging)
     print("Analyzing the resume with LLaMA 3.2...")
-    avg_score, detailed_outputs = analyze_resume_with_llama(resume_text, runs=3)
-    print("\n--- Resume Analysis Result ---")
-    print(f"Average ATS Score: {avg_score:.2f}%")
-    print("Detailed Outputs from Each Run:")
-    for i, output in enumerate(detailed_outputs, 1):
-        print(f"\nRun {i}:\n{output}")
+    avg_score, strengths, weaknesses = analyze_resume_with_llama(resume_text, runs=3)
 
     # Ask if the user wants improvement suggestions
+    suggestions = []
     if ask_user_for_improvements():
         print("\nGenerating improvement suggestions...")
-        improvement_result = generate_improvement_suggestions(avg_score, detailed_outputs[0])
-        print("\n--- Improvement Suggestions ---")
-        print(improvement_result)
+        suggestions = generate_improvement_suggestions(avg_score, "\n".join(strengths + weaknesses))
+
+    # Visualize results
+    print("\nVisualizing results...")
+    generate_visualizations(avg_score, strengths, weaknesses, suggestions)
 
 
 if __name__ == "__main__":
