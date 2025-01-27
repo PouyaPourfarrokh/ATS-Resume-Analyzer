@@ -34,3 +34,7 @@ numpy
 sentencepiece
 
 protobuf
+
+plotly
+
+graphviz
